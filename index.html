@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vuejs-course</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+</head>
+<body>
+
+<div id="app">
+    <users-list v-if="choosedUserId === null" :list="users" v-on:show-user="showUser"></users-list>
+    <user-detail v-else :user-id="choosedUserId" v-on:update-user="updateUser" v-on:show-list="choosedUserId = null"></user-detail>
+</div>
+
+<div id="users-list-template" hidden>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">IsActive</th>
+            <th scope="col">Balance</th>
+            <!--<th scope="col">Picture</th>-->
+            <th scope="col">Age</th>
+            <th scope="col">AccessLevel</th>
+            <th scope="col">FirstName</th>
+            <th scope="col">LastName</th>
+            <th scope="col">Company</th>
+            <th scope="col">Email</th>
+            <!--<th scope="col">Phone</th>-->
+            <!--<th scope="col">Address</th>-->
+            <!--<th scope="col">About</th>-->
+            <!--<th scope="col">Registered</th>-->
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="user in list" :key="user.id" @click="show(user.id)">
+            <th scope="row">{{user.id}}</th>
+            <td>{{user.isActive}}</td>
+            <td>{{user.balance}}</td>
+            <!--<td><img :src="user.picture" width=""/></td>-->
+            <td>{{user.age}}</td>
+            <td>{{user.accessLevel}}</td>
+            <td>{{user.firstName}}</td>
+            <td>{{user.lastName}}</td>
+            <td>{{user.company}}</td>
+            <td><a :href="'mailto:'+user.email">{{user.email}}</a></td>
+            <!--<td>{{user.phone}}</td>-->
+            <!--<td>{{user.address}}</td>-->
+            <!--<td>{{user.about}}</td>-->
+            <!--<td>{{user.registered}}</td>-->
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="user-detail" hidden>
+    <form @submit.prevent="updateUserData">
+        <div class="form-group row">
+            <div class="col-sm-10 offset-sm-2">
+                <div class="form-check">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" v-model="user.isActive">
+                        Active
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Balance</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.balance">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Age</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.age">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">AccessLevel</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.accessLevel">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">FirstName</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.firstName">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">LastName</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.lastName">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-2 col-form-label">Company</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" v-model="user.company">
+            </div>
+        </div>
+        <button type="button" class="btn btn-outline-primary" @click="showList">Go to list</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+
+    var UserList = {
+        template: '#users-list-template',
+        props: {
+            list: {
+                type: Array
+            }
+        },
+        methods: {
+            show: function (id) {
+                this.$emit('show-user', id)
+            }
+        }
+    };
+
+    var UserDetail = {
+        template: '#user-detail',
+        data: function () {
+            return {
+                user: {}
+            }
+        },
+        props: {
+            userId: {
+                type: String | null
+            }
+        },
+        watch: {
+            userId: {
+                immediate: true,
+                handler: function (id) {
+                    this.loadUser(id);
+                }
+            }
+        },
+        methods: {
+            loadUser: function (id) {
+                var self = this;
+                axios.get('http://localhost:3000/users/' + id)
+                    .then(function (response) {
+                        console.info(response);
+                        self.user = response.data;
+                    })
+                    .catch(function (error) {
+                        console.info(error);
+                    })
+            },
+            updateUserData: function () {
+                console.info('updateUserData');
+                var self = this;
+                axios({
+                    method: 'patch',
+                    url: 'http://localhost:3000/users/' + this.user.id,
+                    data: this.user
+                }).then(function (response) {
+                    self.$emit('update-user', self.user)
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            showList: function () {
+                this.$emit('show-list')
+            }
+        }
+    };
+
+    var app = new Vue({
+        el: '#app',
+        components: {
+            usersList: UserList,
+            userDetail: UserDetail
+        },
+        data: function () {
+            return {
+                message: 'Hello Vue!',
+                users: [],
+                choosedUserId: null
+            }
+        },
+        computed: {},
+        mounted: function () {
+            this.loadUsers();
+        },
+        watch: {
+            users: {
+                immediate: true,
+                handler: function (users) {
+                    console.info('users loaded');
+                }
+            }
+        },
+        methods: {
+            loadUsers: function () {
+                var self = this;
+                axios.get('http://localhost:3000/users')
+                    .then(function (response) {
+                        console.info(response);
+
+                        self.users = response.data;
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            },
+            showUser: function (id) {
+                this.choosedUserId = id.toString();
+            },
+            updateUser: function (user) {
+                console.info(user);
+                Vue.set(this.users, user.id, user)
+
+            }
+        }
+    })
+</script>
+</body>
+</html>
